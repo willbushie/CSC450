@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# this script compiles the c program, then runs a.out
+clear
+./reset && gcc main.c && ./a.out
+
+# end of script
