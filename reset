@@ -1,8 +1,0 @@
-#!/bin/bash
-
-# write a 0 to the info.dat file
-clear
-echo "0" > info.dat
-
-# end of script
-

@@ -1,84 +1,103 @@
-// CSC 450 - HW #3 - forking code in order to count from 0 to 9 by reading and writing to a file
-// 2.5 hours so far
+// CSC 450 - HW #4 - Count to 10 using signals and shared memory
 
-#include<stdio.h>
-#include<stdlib.h>
-#include<unistd.h>
-#include<signal.h>
+// inclusions
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/shm.h>
+#include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
 
-int main(void)
+// global variables
+int segment_id;
+int segment_id_pid;
+
+
+// handle user created signals (SIGCONT is for telling the other process to continue count)
+void handle()
+{	
+	printf("Being handled - PID: %d\n",getpid());
+	// obtain & store the shared value
+	int* sh_mem = (int*) shmat(segment_id, NULL, 0);
+	int value = *sh_mem;
+	// update the shared value
+	*sh_mem = value + 1;
+	// detatch from shared memory
+	shmdt(sh_mem);
+	// print the shared value
+	printf("Current count: %d PID: %d\n",value,getpid());
+	// obtain & store the shared value
+	int* sh_mem2 = (int*) shmat(segment_id_pid, NULL, 0);
+	int brotherPID = *sh_mem2;
+	// update the shared value
+	*sh_mem2 = getpid();
+	// detatch from shared memory
+	shmdt(sh_mem2);
+	if(value < 10)
+	{
+		// print the shared value
+		printf("Calling brother - my PID: %d Brother PID: %d\n",getpid(),brotherPID);
+		// signal brother process
+		kill(brotherPID,SIGCONT);
+		kill(getpid(),SIGSTOP);
+	}
+	else
+	{
+		kill(brotherPID,SIGKILL);
+		kill(getpid(),SIGKILL);
+	}
+}
+
+void testhandle()
 {
-    int count;
-    int child1;
-    int child2;
-    // create the child process (child1, child2) from parent
-    int parent = getpid();
-    fork();
-    // if we aren't the parent, assign child1
-    if(getpid() != parent)
-    {
-        child1 = getpid();
-    }
-    // if we are the parent, fork, and if not parent, assign child2
-    if(getpid() == parent)
-    {
-        fork();
-        // if we are not the parent
-        if(getpid() != parent)
-        {
-            child2 = getpid();
-        }
-    }
+	printf("this is stupid");
+}
 
-    // counting process
-    // if we are child processes (child1, child2)
-    for(int num = 0; num < 10; num++)
-    {
-        if(getpid() != parent)
-        {
-            // open file for reading
-            FILE* fptr = fopen("info.dat","r");
-            // read in the value and update the count
-            fscanf(fptr,"%d",&count);
-            // print the value from each child, pid, ppid 
-            printf("child PID: %d PPID: %d count: %d\n",getpid(),getppid(),count);
-            // allow child1 to do the operation
-            if(count+1%2 == 0 && getpid() == child1)
-            {
-                // close reading, open writing, advance, write, close writing
-                fclose(fptr);
-                fptr = fopen("info.dat","w");
-                count++;                
-                fprintf(fptr,"%d",count);
-                fclose(fptr);
-            }
-            else
-            {
-                // close reading
-                fclose(fptr);
-            }
-            // allow child2 to do the operation
-            if (count+1%2 != 0 && getpid() == child2)
-            {
-                // close reading, open writing, advance, write, close writing
-                fclose(fptr);
-                fptr = fopen("info.dat","w");
-                count++;
-                fprintf(fptr,"%d",count);
-                fclose(fptr);
-            }
-            else
-            {
-                // close reading
-                fclose(fptr);
-            }
-            sleep(1);
-        }
-    }
-    // kill the each child process
-    kill(child1,SIGKILL);
-    kill(child2,SIGKILL);
-    // make parent process wait for child processes
-    wait(NULL);
-    return 0;
+// main method
+int main()
+{
+    // variable creation
+	int child1; 
+	int child2;
+	int count = 1;
+	int parent = getpid();
+
+	// create shared memory segment & place the current value in it as the parent
+	segment_id = shmget (IPC_PRIVATE, sizeof(int), IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
+	int* sh_mem = (int*) shmat(segment_id, NULL, 0);
+	*sh_mem = count;
+	shmdt(sh_mem);
+
+	// create the children & keep track of the PIDs
+	child1 = fork();
+	if(getpid() == parent) // if we are the parent, fork
+	{
+		child2 = fork();
+	}
+
+	if(getpid() == parent)
+	{	
+		// set shared pid to child1 pid
+		segment_id_pid = shmget (IPC_PRIVATE, sizeof(int), IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
+		int* sh_mem2 = (int*) shmat(segment_id_pid, NULL, 0);
+		*sh_mem2 = child2;
+		shmdt(sh_mem2);
+		// begin counting process - call SIGUSR for child1
+		printf("parent PID: %d child1 PID: %d child2 PID: %d\n",parent,child1,child2);
+	}
+	else
+	{
+		signal(SIGCONT,handle);
+		kill(child1,SIGCONT);
+	}
+
+
+	// parent wait until child process killed
+	sleep(5);
+	//wait(NULL);
+	printf("PID: %d end\n",getpid());
+	return 0;
 }
