@@ -1,6 +1,3 @@
-// CSC 450 - HW #4 - Count to 10 using signals and shared memory
-
-// inclusions
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,94 +7,78 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <signal.h>
+#include <semaphore.h>
 
 // global variables
-int segment_id;
-int segment_id_pid;
+int* sh_mem;
+const char* semName = "count, child";
 
 
-// handle user created signals (SIGCONT is for telling the other process to continue count)
-void handle()
-{	
-	printf("Being handled - PID: %d\n",getpid());
-	// obtain & store the shared value
-	int* sh_mem = (int*) shmat(segment_id, NULL, 0);
-	int value = *sh_mem;
-	// update the shared value
-	*sh_mem = value + 1;
-	// detatch from shared memory
-	shmdt(sh_mem);
-	// print the shared value
-	printf("Current count: %d PID: %d\n",value,getpid());
-	// obtain & store the shared value
-	int* sh_mem2 = (int*) shmat(segment_id_pid, NULL, 0);
-	int brotherPID = *sh_mem2;
-	// update the shared value
-	*sh_mem2 = getpid();
-	// detatch from shared memory
-	shmdt(sh_mem2);
-	if(value < 10)
-	{
-		// print the shared value
-		printf("Calling brother - my PID: %d Brother PID: %d\n",getpid(),brotherPID);
-		// signal brother process
-		kill(brotherPID,SIGCONT);
-		kill(getpid(),SIGSTOP);
-	}
-	else
-	{
-		kill(brotherPID,SIGKILL);
-		kill(getpid(),SIGKILL);
-	}
-}
-
-void testhandle()
+void operation()
 {
-	printf("this is stupid");
+    if(*sh_mem > 10)
+    {
+        shmdt(sh_mem);
+        //printf("operation complete, killing process %d\n",getpid());
+        kill(getpid(),SIGKILL);
+    }
+    else
+    {
+        printf("Count: %d (%d)\n", *sh_mem, getpid());
+        *sh_mem += 1;
+        //sem_post(sem_id);
+    }
 }
 
-// main method
 int main()
-{
-    // variable creation
-	int child1; 
-	int child2;
-	int count = 1;
-	int parent = getpid();
+{    
+    printf("Parent (%d)\n",getpid());
+    // for storing the counting value
+    int segment_id = shmget (IPC_PRIVATE, sizeof(int), IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
+    
+    // set the shared memory value
+    sh_mem = (int*) shmat(segment_id, NULL, 0);
+    *sh_mem = 0;
+    shmdt(sh_mem);
 
-	// create shared memory segment & place the current value in it as the parent
-	segment_id = shmget (IPC_PRIVATE, sizeof(int), IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
-	int* sh_mem = (int*) shmat(segment_id, NULL, 0);
-	*sh_mem = count;
-	shmdt(sh_mem);
-
-	// create the children & keep track of the PIDs
-	child1 = fork();
-	if(getpid() == parent) // if we are the parent, fork
-	{
-		child2 = fork();
-	}
-
-	if(getpid() == parent)
-	{	
-		// set shared pid to child1 pid
-		segment_id_pid = shmget (IPC_PRIVATE, sizeof(int), IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
-		int* sh_mem2 = (int*) shmat(segment_id_pid, NULL, 0);
-		*sh_mem2 = child2;
-		shmdt(sh_mem2);
-		// begin counting process - call SIGUSR for child1
-		printf("parent PID: %d child1 PID: %d child2 PID: %d\n",parent,child1,child2);
-	}
-	else
-	{
-		signal(SIGCONT,handle);
-		kill(child1,SIGCONT);
-	}
-
-
-	// parent wait until child process killed
-	sleep(5);
-	//wait(NULL);
-	printf("PID: %d end\n",getpid());
-	return 0;
+    int pid = fork();
+    if(pid == 0) // first child
+    {
+        sem_t* sem_id = sem_open(semName, O_CREAT, 0600, 0);
+        printf("First Child (%d)\n", getpid());
+        sh_mem = (int*) shmat(segment_id, NULL, 0);
+        *sh_mem = 0;
+        sem_post(sem_id);
+        while(1)
+        {
+            //printf("first child check (%d)\n",getpid());
+            sleep(1);
+            sem_wait(sem_id);
+            operation();
+            sem_post(sem_id);
+        }
+        sem_close(sem_id);
+        sem_unlink(semName);
+    }
+    else
+    {
+        pid = fork();
+        if(pid == 0) // second child
+        {
+            sem_t* sem_id = sem_open(semName, O_CREAT, 0600, 0);
+            printf("Second Child (%d)\n", getpid());
+            sh_mem = (int*) shmat(segment_id, NULL, 0);
+            while(1)
+            {
+                sleep(1);
+                sem_wait(sem_id);
+                operation();
+                sem_post(sem_id);
+            }
+            sem_close(sem_id);
+            sem_unlink(semName);
+        }
+    }
+    wait(NULL);
+    //sleep(1);
 }
