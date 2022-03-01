@@ -1,98 +1,110 @@
+// CSC450 - HW#6 - Merge Sort implementation using child processes and shared memory
+
+// includes section
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
 #define ARRAY_SIZE 10
 
+// global variables
+int* sh_mem;
+
+// function declarations
 void mergeSort(int* ar);
 void mergeSortHelper(int* ar, int begin, int end);
 void displayArray(int* ar, int length);
 
+
 int main() 
 {
    time_t t;
-   int* ar = (int*)malloc(ARRAY_SIZE * sizeof(int)); //by default malloc returns a void*
+   int* array = (int*)malloc(ARRAY_SIZE * sizeof(int)); //by default malloc returns a void*
    
-   //srand(time(&t));
+   //srand(time(&t)); // randomly seed a list
 
-   for(int i = 0; i < ARRAY_SIZE; i++) 
+   for(int index = 0; index < ARRAY_SIZE; index++) 
    {
-      ar[i] = rand() % 20;
+      array[index] = rand() % 20;
    }
    
    //displayArray(ar, ARRAY_SIZE);
-   mergeSort(ar);
-   displayArray(ar, ARRAY_SIZE);
+   mergeSort(array);
+   displayArray(array, ARRAY_SIZE);
    
-   free(ar);
+   free(array); // sys call
    return 0;
 }
 
-void displayArray(int* ar, int length)
+// have an array display itself
+void displayArray(int* array, int length)
 {
-    for(int i = 0; i < length; i++)
+    for(int index = 0; index < length; index++)
     {
-        printf("%d\n", ar[i]);
+        printf("%d\n", array[index]);
     }
 }
 
-void mergeSort(int* ar)
+// merge sort the array
+void mergeSort(int* array)
 {
-    mergeSortHelper(ar, 0, ARRAY_SIZE - 1);
+    mergeSortHelper(array, 0, ARRAY_SIZE - 1);
 }
 
-void mergeSortHelper(int* ar, int begin, int end)
+// merge sort "helper" (main execution code)
+void mergeSortHelper(int* array, int leftmost, int rightmost)
 {
-    //is this portion of the array trivially sorted?
-    if(begin != end)
+    // is this portion of the array trivially sorted? (single array item?)
+    if(leftmost != rightmost)
     {
-        int begin1 = begin;
-        int end1 = (end + begin)/2;
-        int begin2 = end1 + 1;
-        int end2 = end;
+        int leftmostA = leftmost;
+        int rightmostA = (rightmost + leftmost)/2;
+        int leftmostB = rightmostA + 1;
+        int rightmostB = rightmost;
         
-        mergeSortHelper(ar, begin1, end1);
-        mergeSortHelper(ar, begin2, end2);
+        // recurrsive merge sort call
+        mergeSortHelper(array, leftmostA, rightmostA);
+        mergeSortHelper(array, leftmostB, rightmostB);
         
         
         //now merge
-        int tempLength = end - begin + 1;
+        int tempLength = rightmost - leftmost + 1;
         int temp[tempLength];
-        int pos1 = begin1;
-        int pos2 = begin2;
+        int pos1 = leftmostA;
+        int pos2 = leftmostB;
         
-        for(int i = 0; i < tempLength; i++)
+        for(int currIndex = 0; currIndex < tempLength; currIndex++)
         {
-            if(pos1 <= end1 && pos2 <= end2)
+            if(pos1 <= rightmostA && pos2 <= rightmostB)
             {
-                if(ar[pos1] < ar[pos2])
+                if(array[pos1] < array[pos2])
                 {
-                    temp[i] = ar[pos1];
+                    temp[currIndex] = array[pos1];
                     pos1++;
                 }
                 else
                 {
-                    temp[i] = ar[pos2];
+                    temp[currIndex] = array[pos2];
                     pos2++;
                 }
             }
-            else if(pos1 <= end1)
+            else if(pos1 <= rightmostA)
             {
-                temp[i] = ar[pos1];
+                temp[currIndex] = array[pos1];
                 pos1++;
             }
             else
             {
-                temp[i] = ar[pos2];
+                temp[currIndex] = array[pos2];
                 pos2++;
             }
         }
         
-        //copy temp back over ar
+        //copy temp back over array
         int tempPos = 0;
-        for(int i = begin; i <= end; i++)
+        for(int i = leftmost; i <= rightmost; i++)
         {
-            ar[i] = temp[tempPos];
+            array[i] = temp[tempPos];
             tempPos++;
         }
     }
