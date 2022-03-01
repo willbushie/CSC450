@@ -1,84 +1,99 @@
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/shm.h>
-#include <sys/wait.h>
-#include <string.h>
-#include <signal.h>
-#include <semaphore.h>
+#include <time.h>
 
-// global variables
-int* sh_mem;
-const char* semName = "count, child";
+#define ARRAY_SIZE 10
 
+void mergeSort(int* ar);
+void mergeSortHelper(int* ar, int begin, int end);
+void displayArray(int* ar, int length);
 
-void operation()
+int main() 
 {
-    if(*sh_mem > 10)
+   time_t t;
+   int* ar = (int*)malloc(ARRAY_SIZE * sizeof(int)); //by default malloc returns a void*
+   
+   //srand(time(&t));
+
+   for(int i = 0; i < ARRAY_SIZE; i++) 
+   {
+      ar[i] = rand() % 20;
+   }
+   
+   //displayArray(ar, ARRAY_SIZE);
+   mergeSort(ar);
+   displayArray(ar, ARRAY_SIZE);
+   
+   free(ar);
+   return 0;
+}
+
+void displayArray(int* ar, int length)
+{
+    for(int i = 0; i < length; i++)
     {
-        shmdt(sh_mem);
-        //printf("operation complete, killing process %d\n",getpid());
-        kill(getpid(),SIGKILL);
-    }
-    else
-    {
-        printf("Count: %d (%d)\n", *sh_mem, getpid());
-        *sh_mem += 1;
-        //sem_post(sem_id);
+        printf("%d\n", ar[i]);
     }
 }
 
-int main()
-{    
-    printf("Parent (%d)\n",getpid());
-    // for storing the counting value
-    int segment_id = shmget (IPC_PRIVATE, sizeof(int), IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
-    
-    // set the shared memory value
-    sh_mem = (int*) shmat(segment_id, NULL, 0);
-    *sh_mem = 0;
-    shmdt(sh_mem);
+void mergeSort(int* ar)
+{
+    mergeSortHelper(ar, 0, ARRAY_SIZE - 1);
+}
 
-    int pid = fork();
-    if(pid == 0) // first child
+void mergeSortHelper(int* ar, int begin, int end)
+{
+    //is this portion of the array trivially sorted?
+    if(begin != end)
     {
-        sem_t* sem_id = sem_open(semName, O_CREAT, 0600, 0);
-        printf("First Child (%d)\n", getpid());
-        sh_mem = (int*) shmat(segment_id, NULL, 0);
-        *sh_mem = 0;
-        sem_post(sem_id);
-        while(1)
+        int begin1 = begin;
+        int end1 = (end + begin)/2;
+        int begin2 = end1 + 1;
+        int end2 = end;
+        
+        mergeSortHelper(ar, begin1, end1);
+        mergeSortHelper(ar, begin2, end2);
+        
+        
+        //now merge
+        int tempLength = end - begin + 1;
+        int temp[tempLength];
+        int pos1 = begin1;
+        int pos2 = begin2;
+        
+        for(int i = 0; i < tempLength; i++)
         {
-            //printf("first child check (%d)\n",getpid());
-            sleep(1);
-            sem_wait(sem_id);
-            operation();
-            sem_post(sem_id);
-        }
-        sem_close(sem_id);
-        sem_unlink(semName);
-    }
-    else
-    {
-        pid = fork();
-        if(pid == 0) // second child
-        {
-            sem_t* sem_id = sem_open(semName, O_CREAT, 0600, 0);
-            printf("Second Child (%d)\n", getpid());
-            sh_mem = (int*) shmat(segment_id, NULL, 0);
-            while(1)
+            if(pos1 <= end1 && pos2 <= end2)
             {
-                sleep(1);
-                sem_wait(sem_id);
-                operation();
-                sem_post(sem_id);
+                if(ar[pos1] < ar[pos2])
+                {
+                    temp[i] = ar[pos1];
+                    pos1++;
+                }
+                else
+                {
+                    temp[i] = ar[pos2];
+                    pos2++;
+                }
             }
-            sem_close(sem_id);
-            sem_unlink(semName);
+            else if(pos1 <= end1)
+            {
+                temp[i] = ar[pos1];
+                pos1++;
+            }
+            else
+            {
+                temp[i] = ar[pos2];
+                pos2++;
+            }
+        }
+        
+        //copy temp back over ar
+        int tempPos = 0;
+        for(int i = begin; i <= end; i++)
+        {
+            ar[i] = temp[tempPos];
+            tempPos++;
         }
     }
-    wait(NULL);
-    //sleep(1);
 }
