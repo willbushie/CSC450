@@ -2,5 +2,6 @@
 
 # this script compiles the c program, then runs a.out
 clear
-echo "" && echo "~~~ start of this run ~~~" && echo ""
+echo "~~~ start of this run ~~~" && echo ""
 gcc main.c && ./a.out
+echo "" && echo "~~~ end of this run ~~~"
