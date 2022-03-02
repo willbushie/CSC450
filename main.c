@@ -10,17 +10,19 @@
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
+#include <sys/ipc.h>
+#include <sys/types.h>
 
 #define ARRAY_SIZE 10
 
 // global variables
 int* sh_mem;
+int segment_id;
 
 // function declarations
-void mergeSort(int* ar);
-void mergeSortHelper(int* ar, int begin, int end);
-void displayArray(int* ar, int length);
-
+void mergeSort(int* array);
+void mergeSortHelper(int* array, int leftmost, int rightmost);
+void displayArray(int* array, int length);
 
 int main() 
 {
@@ -34,18 +36,25 @@ int main()
         array[index] = rand() % 20;
     }
 
-    //displayArray(ar, ARRAY_SIZE);
-    displayArray(array, ARRAY_SIZE);
-    mergeSort(array);
-    displayArray(array, ARRAY_SIZE);
+    // create the shared mememory
+    segment_id = shmget (IPC_PRIVATE, ARRAY_SIZE * sizeof(int), IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
+    sh_mem = (int*) shmat(segment_id, NULL, 0);
+    sh_mem = array;
+    
+    //displayArray(sh_mem,ARRAY_SIZE);
+    mergeSort(sh_mem);
+    displayArray(sh_mem, ARRAY_SIZE);
 
-    free(array); // sys call
+    // clean up
+    free(array);
+    shmdt(sh_mem);
     return 0;
 }
 
 // have an array display itself
 void displayArray(int* array, int length)
 {
+    printf("___________________\n");
     for(int index = 0; index < length; index++)
     {
         printf("%d\n", array[index]);
@@ -88,6 +97,7 @@ void mergeSortHelper(int* array, int leftmost, int rightmost)
         }
         if(getpid() != parent)
         {
+
             //printf("children created. childA: %d, childB: %d, parent: %d, my PID: %d\n",childA,childB,parent,getpid());
         }
 
