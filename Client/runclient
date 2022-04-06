@@ -1,4 +1,0 @@
-#!/bin/bash
-
-javac chatCleint.java
-java chatClient.java

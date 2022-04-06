@@ -1,4 +1,0 @@
-#!/bin/bash
-
-javac chatServer.java
-java chatServer.java

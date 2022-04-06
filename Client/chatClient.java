@@ -1,56 +1,35 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.PrintStream;
 import java.net.Socket;
 import java.util.Scanner;
 
 public class chatClient 
 {
-    public static void main(String[] args)
+    public static void main(String[] args) throws Exception
     {
-        try
-        {    
-            Socket s = new Socket("localhost", 2222); 
-            boolean keepConnection = true;
-            Scanner scn = new Scanner(System.in);
-            DataInputStream clientInput = new DataInputStream(s.getInputStream());
-            DataOutputStream clientOutput = new DataOutputStream(s.getOutputStream());
-            while(true)
+        Socket s = new Socket("localhost", 2222); 
+        Scanner clientInput = new Scanner(s.getInputStream());
+        String question = clientInput.nextLine();
+        System.out.println(question);
+        Scanner localInput = new Scanner(System.in);
+        PrintStream clientOutput = new PrintStream(s.getOutputStream());
+        Thread lt = new Thread() {
+            public void run()
             {
-                /* Scanner clientInput = new Scanner(s.getInputStream());
-                String prompt = clientInput.nextLine();
-                System.out.println(prompt);
-                Scanner localInput = new Scanner(System.in);
-                if (localInput.equals("/exit"))
+                String line;
+                while(true)
                 {
-                    keepConnection = false;
-                }
-                else
-                {
-                    PrintStream clientOutput = new PrintStream(s.getOutputStream());
-                    clientOutput.println(localInput.nextLine());    
-                } */
-
-                System.out.println(clientInput.readUTF()); //System.out.println(dis.readUTF())
-                String toSend = scn.nextLine();
-                if (toSend.equals("/exit"))
-                {
-                    s.close();
-                    scn.close();
-                    clientInput.close();
-                    clientOutput.close();
-                    break;
-                }
-                else
-                {
-                    clientOutput.writeUTF(toSend);
+                    line = clientInput.nextLine();
+                    System.out.println(line);
                 }
             }
-        }
-        catch(Exception error)
+        };
+
+        lt.start();
+
+        while(true)
         {
-            System.err.println("There was an issue with the client application.");
-            error.printStackTrace();
+            clientOutput.println(localInput.nextLine());
         }
+        
     }
 }
