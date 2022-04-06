@@ -17,6 +17,5 @@ public class chatServer
             theThreads.add(t);
             t.start();
         }
-        
     }
 }

@@ -11,11 +11,18 @@ public class CORE
         CORE.theClientStreams.add(ps);
     }
 
+    public static void removeClientThreadPrintStream(PrintStream ps)
+    {
+        System.out.print("removing client thread");
+        CORE.theClientStreams.remove(ps);
+    }
+
     public static void broadcastMessage(String message)
     {
         System.out.println("About to broadcast....");
         for (PrintStream ps : CORE.theClientStreams)
         {
+            System.out.println(CORE.theClientStreams);
             ps.println(message);
         }
     }
