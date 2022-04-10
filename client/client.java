@@ -5,9 +5,11 @@ import java.util.Map;
 
 public class client 
 {
-    public static void updateSharableDirectory()
+    private ArrayList<Map<String,String>> shareableDirectory = new ArrayList<Map<String,String>>();
+
+    public void updateSharableDirectory()
     {
-        ArrayList<Map> holdList = new ArrayList<Map>();
+        ArrayList<Map<String,String>> holdList = new ArrayList<Map<String,String>>();
         File share = new File("./share");
         File[] listOfFiles = share.listFiles();
         for (int i = 0; i < listOfFiles.length; i++)
@@ -30,11 +32,33 @@ public class client
                 //System.out.println("Directory: " + listOfFiles[i]);
             }
         }
-        System.out.println(holdList);
+        this.shareableDirectory = holdList;
+        //System.out.println(holdList);
+    }
+
+    public void displayShareable()
+    {
+        for (int i = 0; i < this.shareableDirectory.size(); i++)
+        {
+            System.out.println(this.shareableDirectory.get(i));
+        }
+    }
+
+    public boolean checkForFile(String filename)
+    {
+        for (int i = 0; i < this.shareableDirectory.size(); i++)
+        {
+            if (this.shareableDirectory.get(i).containsValue(filename))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static void main(String[] args) 
     {
-        updateSharableDirectory();
+        client c = new client();
+        c.updateSharableDirectory();
     }
 }
