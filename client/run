@@ -1,4 +1,0 @@
-#!/bin/bash
-clear
-javac client.java
-java client.java
