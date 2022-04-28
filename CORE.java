@@ -1,5 +1,8 @@
 import java.io.DataOutputStream;
+import java.io.PrintStream;
+import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class CORE 
 {
@@ -18,6 +21,7 @@ public class CORE
     {
         connectedIP.remove(IP);
         System.out.println(connectedIP);
+        broadcastUpdate("disconnection", IP);
     }
     
     /** 
@@ -27,6 +31,7 @@ public class CORE
     {
         connectedIP.add(IP);
         System.out.println(connectedIP);
+        broadcastUpdate("connection", IP);
     }
 
     /**
@@ -40,10 +45,19 @@ public class CORE
     /** 
      * Removes an IP address from the this.connectedIP list
      */
-    /* private static void broadcastUpdate(String type, String IPtoAction)
+    public static void broadcastUpdate(String type, String IP)
     {
-        
-    } */
+        System.out.println("Broadcasting to all known IPs an update");
+        int PORT = 6682;
+        for (int count = 0; count < connectedIP.size(); count++) 
+        {
+            Socket s = new Socket(connectedIP.get(count),PORT);
+            PrintStream sendingInfo = new PrintStream(s.getOutputStream());
+            Scanner receivingInfo = new Scanner(s.getInputStream());
+            sendingInfo.println(type);
+            sendingInfo.println(IP);
+        }
+    }
 
 
 

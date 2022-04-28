@@ -7,19 +7,17 @@ import java.lang.reflect.Array;
 public class TrackerThread extends Thread
 {
     private Socket theClient;
-    //private ArrayList<String> connectedIP;
     private Scanner receivingInfo;
     private PrintStream sendingInfo;
 
     /**
-     * Start method for the thread - setting class attributes.
+     * Start method for the thread - setting thread attributes.
      */
-    public TrackerThread(Socket theClient)//, ArrayList<String> connectedIP)
+    public TrackerThread(Socket theClient)
     {
         try
         {
             this.theClient = theClient;
-            //this.connectedIP = connectedIP;
             this.sendingInfo = new PrintStream(this.theClient.getOutputStream());
             this.receivingInfo = new Scanner(this.theClient.getInputStream());
         }
@@ -74,10 +72,6 @@ public class TrackerThread extends Thread
         sendingInfo.println("end");
         System.out.println("IP List fully sent...");
 
-        //get the IP address of our connect client
-        //add it to our list of peers, then broadcast
-        //the current list of peers to this connected client
-        //as well as all previous clients
         System.out.println("Thread exiting...");
     }
 }

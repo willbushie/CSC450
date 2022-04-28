@@ -6,17 +6,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Inet4Address;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
 import java.util.ArrayList;
 
 public class ClientDriver
 {
-    // a list containing only the connected IPs
-    private static ArrayList<String> connectedIP = new ArrayList<String>();
-    // This clients IP address
-    //private static String myIP = Inet4Address.getLocalHost().getHostAddress();
-
     //the below info would have been gleened from a .torrent file
     private static String TRACKERIP = "localhost";
     private static int TRACKERPORT = 6881;
@@ -64,10 +60,10 @@ public class ClientDriver
             response = recievingInfo.nextLine();
             if(response.equals("end") == false)
             {
-                System.out.println("Adding to list... " + response);
+                //System.out.println("Adding to list... " + response);
                 if(response.equals(myIP) == false)
                 {
-                    connectedIP.add(response);
+                    ClientCORE.addIP(response);
                 }
             }
             else if(response.equals("end"))
@@ -75,15 +71,23 @@ public class ClientDriver
                 break;
             }
         }
-        System.out.println(connectedIP);
+        System.out.println(ClientCORE.returnIPList());
         // soft disconnect from tracker
+        s.close();
 
+        // listen for updates from the tracker if they come in
+        ServerSocket listener = new ServerSocket(6682);
+        while(true)
+        {
+            System.out.println("Preparing listener for when tracker reconnects...");
+            (new CListener(listener.accept())).start();
+        }
 
+    
         /* String torrentName = "cambria.jpeg";
         PrintStream textOutputOverSocket = new PrintStream(s.getOutputStream());
         textOutputOverSocket.println(torrentName);
         textOutputOverSocket.println("ip address") //HOW DO WE GET OUT IP!!!!!!
         textOutputOverSocket.println("" + ClientCORE.getNextPortNumber()); */
-        System.out.println("exiting...");
     }
 }
