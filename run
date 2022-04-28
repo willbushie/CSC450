@@ -1,0 +1,4 @@
+#!/bin/bash
+
+javac Tracker.java
+java Tracker.java

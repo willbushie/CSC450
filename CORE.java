@@ -5,6 +5,49 @@ public class CORE
 {
     private static ArrayList<DataOutputStream> theClientDOSsss= new ArrayList<DataOutputStream>();
 
+
+
+
+    // connected IPs are placed inside of this list
+    private static ArrayList<String> connectedIP = new ArrayList<String>();
+
+    /** 
+     * Removes an IP address from the this.connectedIP list
+     */
+    public synchronized static void removeIP(String IP)
+    {
+        connectedIP.remove(IP);
+        System.out.println(connectedIP);
+    }
+    
+    /** 
+     * Removes an IP address from the this.connectedIP list
+     */
+    public synchronized static void addIP(String IP)
+    {
+        connectedIP.add(IP);
+        System.out.println(connectedIP);
+    }
+
+    /**
+     * Return the list of IPs
+     */
+    public static ArrayList<String> returnListOfIP()
+    {
+        return connectedIP;
+    }
+
+    /** 
+     * Removes an IP address from the this.connectedIP list
+     */
+    /* private static void broadcastUpdate(String type, String IPtoAction)
+    {
+        
+    } */
+
+
+
+
     public synchronized static void addDOS(DataOutputStream dos)
     {
         CORE.theClientDOSsss.add(dos);

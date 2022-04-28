@@ -1,0 +1,4 @@
+#!/bin/bash
+
+javac ClientDriver.java
+java ClientDriver.java
