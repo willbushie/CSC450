@@ -1,98 +1,65 @@
 import java.io.DataOutputStream;
 import java.io.PrintStream;
-import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 public class CORE 
 {
-    private static ArrayList<DataOutputStream> theClientDOSsss= new ArrayList<DataOutputStream>();
-
-
-
-
-    // connected IPs are placed inside of this list
-    private static ArrayList<String> connectedIP = new ArrayList<String>();
-
-    /** 
-     * Removes an IP address from the this.connectedIP list
-     */
-    public synchronized static void removeIP(String IP)
-    {
-        connectedIP.remove(IP);
-        System.out.println(connectedIP);
-        broadcastUpdate("disconnection", IP);
-    }
+    private static ArrayList<String> theConnectedClientIPs = new ArrayList<String>();
+    private static ArrayList<PrintStream> theClientPrintStreams = new ArrayList<PrintStream>();
+    private static int currentClientPort = 3000;
     
-    /** 
-     * Removes an IP address from the this.connectedIP list
-     */
-    public synchronized static void addIP(String IP)
+    public static synchronized void addPrintStream(PrintStream ps)
     {
-        connectedIP.add(IP);
-        System.out.println(connectedIP);
-        broadcastUpdate("connection", IP);
+        CORE.theClientPrintStreams.add(ps);
     }
 
-    /**
-     * Return the list of IPs
-     */
-    public static ArrayList<String> returnListOfIP()
+    static public synchronized int getNextClientPort()
     {
-        return connectedIP;
+        return CORE.currentClientPort++;
     }
 
-    /** 
-     * Removes an IP address from the this.connectedIP list
-     */
-    public static void broadcastUpdate(String type, String IP)
+    public static void broadcastStringToClients(String s)
     {
-        System.out.println("Broadcasting to all known IPs an update");
-        int PORT = 6682;
-        for (int count = 0; count < connectedIP.size(); count++) 
+        for(PrintStream ps : CORE.theClientPrintStreams)
         {
-            Socket s = new Socket(connectedIP.get(count),PORT);
-            PrintStream sendingInfo = new PrintStream(s.getOutputStream());
-            Scanner receivingInfo = new Scanner(s.getInputStream());
-            sendingInfo.println(type);
-            sendingInfo.println(IP);
+            ps.println(s);
         }
     }
 
-
-
-
-    public synchronized static void addDOS(DataOutputStream dos)
+    public static String getConnectedClientIPsString()
     {
-        CORE.theClientDOSsss.add(dos);
-    }
-    
-    public static synchronized void removeReceivers()
-    {
-        for(DataOutputStream dos : CORE.theClientDOSsss)
+        String answer = "";
+        for(int i = 0; i < CORE.theConnectedClientIPs.size(); i++)
         {
-            try {
-                dos.close();
-            } catch (Exception e) {
-                //TODO: handle exception
-            }
-            
-        }
-        CORE.theClientDOSsss.clear();
-    }
-
-    public synchronized static void broadCastByte(byte b)
-    {
-        try
-        {
-            for(DataOutputStream dos : CORE.theClientDOSsss)
+            if(answer.length()==0)
             {
-                dos.writeByte(b);
+                answer = answer + CORE.theConnectedClientIPs.get(i);
+            }
+            else
+            {
+                answer = answer + "," + CORE.theConnectedClientIPs.get(i);
             }
         }
-        catch(Exception e)
+        return answer;
+    }
+
+    public static synchronized void changeConnectedClientIPs(String ip, boolean shouldAdd)
+    {
+        //if shouldAdd is true, we are adding the ip, else we are removing the IP
+        if(shouldAdd)
         {
-            e.printStackTrace();
+            CORE.theConnectedClientIPs.add(ip);
+        }
+        else
+        {
+            for(int i = 0; i < CORE.theConnectedClientIPs.size(); i++)
+            {
+                if(CORE.theConnectedClientIPs.get(i).equals(ip))
+                {
+                    CORE.theConnectedClientIPs.remove(i);
+                    return;
+                }
+            }
         }
     }
 }

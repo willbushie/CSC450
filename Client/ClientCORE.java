@@ -2,40 +2,16 @@ import java.util.ArrayList;
 
 public class ClientCORE 
 {
-    private static int nextPort = 3000;
-    
+    private static ArrayList<String> theConnectedClientIPs= new ArrayList<String>();
 
-    // a list containing only the connected IPs
-    private static ArrayList<String> connectedIP = new ArrayList<String>();
-
-    /**
-     * Add an IP address to the connectedIP list.
-     */
-    public synchronized static void addIP(String IP)
+    public static void updateTheConnectedClientIPs(String commaDilimitedListOfIPs)
     {
-        connectedIP.add(IP);
-    }
-
-    /**
-     * Remove an IP address to the connectedIP list.
-     */
-    public synchronized static void removeIP(String IP)
-    {
-        connectedIP.remove(IP);
-    }
-
-    /**
-     * Add an IP address to the connectedIP list.
-     */
-    public synchronized static ArrayList<String> returnIPList()
-    {
-        return connectedIP;
-    }
-
-
-
-    public synchronized static int getNextPortNumber()
-    {
-        return nextPort++;
+        ClientCORE.theConnectedClientIPs.clear();
+        String[] theIPs = commaDilimitedListOfIPs.split(",");
+        for(int i = 0 ; i < theIPs.length; i++)
+        {
+            ClientCORE.theConnectedClientIPs.add(theIPs[i]);
+        }
+        System.out.println("Client IP List Updated");
     }
 }
