@@ -26,7 +26,7 @@ public class ClientSendThread extends Thread
                 //wait for a request
                 String byteNumber = input.nextLine(); //this line blocks
 
-                //check to see if we have that byteNumber and response YES or NO
+                //check to see if we have that byteNumber and respond YES or NO
                 boolean doIHaveByte = false;
 
                 if(doIHaveByte)

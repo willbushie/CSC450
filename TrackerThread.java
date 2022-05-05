@@ -35,6 +35,5 @@ public class TrackerThread extends Thread
             //as well as all previous clients
         }
         catch(Exception e){}
-       
     }
 }
